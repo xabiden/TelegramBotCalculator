@@ -6,60 +6,62 @@ using System.Globalization;
 
 // Телеграмм бот калькулятор.
 // Панель управления > свойства браузера > подключения > настройка сети > использовать прокси сервер.
+// Нашёл прокси и подрубил - хорошо
 
 namespace ConsoleApp2
 {
     class Program
-    {   
+    {
         // Создаём бота с токеном.
         private static readonly TelegramBotClient Bot = new TelegramBotClient("626096259:AAFJNjKD74o5Tx8n-0-X3zj_mVZYk7NL4oY");
 
         static void Main(string[] args)
         {
+            //один обработчик на два разных события? ну такоэ, на мой взгляд
             Bot.OnMessage += Bot_OnMessage;
             Bot.OnMessageEdited += Bot_OnMessage;
 
-            // Имхо, чтобы "Выберите операцию" и результат отправлялись лишь раз, надо подписаться на события.
-            
+            // Имхо, чтобы "Выберите операцию" и результат отправлялись лишь раз, надо подписаться на события.//?????
+
 
             Bot.StartReceiving();
             Console.ReadLine();
             Bot.StopReceiving();
-
-            
-
+            /*
+                много пустого места
+            */
         }
-
+        //бота можно бы и в отдельный класс вынести. Кстати, что ещё из e ты используешь? И из sender?
         private static void Bot_OnMessage(object sender, Telegram.Bot.Args.MessageEventArgs e)
         {
             string history = "";
-            history += e.Message.Text;
+            history += e.Message.Text;//а почему не присвоить сразу? строка гарантированно пустая в этот момент
 
             if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Text)
             {
-                
-                
-
-
-                var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
+                /*
+                    Понимаю, пробелы бесплатные
+                    Можно ставить много :D
+                */
+                var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[] //необязательно полное имя класса указывать
                 {
                       new [] 
                       // Строка кнопок.
                       {
                                       InlineKeyboardButton.WithCallbackData("Калькулятор", "calculator"),
-                                      InlineKeyboardButton.WithCallbackData("История", "history"),                                     
-                      }                     
-                });               
+                                      InlineKeyboardButton.WithCallbackData("История", "history"),
+                      }
+                });
 
-                Bot.SendTextMessageAsync(e.Message.Chat.Id, "Выберите действие", replyMarkup: keyboard);
+                Bot.SendTextMessageAsync(e.Message.Chat.Id, "Выберите действие", replyMarkup: keyboard);//async-await
             }
 
-            // При нажатии на кнопку.
-            Bot.OnCallbackQuery += async (object sc, Telegram.Bot.Args.CallbackQueryEventArgs ev) => 
+            // При нажатии на кнопку.//вообще зло
+            Bot.OnCallbackQuery += async (object sc, Telegram.Bot.Args.CallbackQueryEventArgs ev) =>
             {
                 var message = ev.CallbackQuery.Message;
                 if (ev.CallbackQuery.Data == "calculator")
-                // При нажатии на левую кнопку меню (калькулятор).
+                // При нажатии на левую кнопку меню (калькулятор). //самое странное расположение коммента, которое я видел
                 {
                     var keyboard = new Telegram.Bot.Types.ReplyMarkups.InlineKeyboardMarkup(new[]
                     {
@@ -80,27 +82,27 @@ namespace ConsoleApp2
 
 
                     await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Выберите операцию", replyMarkup: keyboard);
-                    
 
 
-                    // При нажатии на кнопку в подменю.
-                    Bot.OnCallbackQuery += async (object op, Telegram.Bot.Args.CallbackQueryEventArgs sec) => 
+
+                    // При нажатии на кнопку в подменю.//зло в квадрате, ведь ты уже в обработчике
+                    Bot.OnCallbackQuery += async (object op, Telegram.Bot.Args.CallbackQueryEventArgs sec) =>
                     {
-                        var message2 = sec.CallbackQuery.Message;
+                        var message2 = sec.CallbackQuery.Message;//message2 - это сиквел?
 
-                        // При нажатии на кнопку сложения.
-                        if (sec.CallbackQuery.Data == "+")                      
+                        // При нажатии на кнопку сложения. //Antipattern.Сopypaste.Start()
+                        if (sec.CallbackQuery.Data == "+")
                         {
 
                             try
                             {
                                 string s = e.Message.Text.Replace(',', '.');
-
+                                //а не проще var strNumbers = ... ?
                                 string[] strNumbers;
 
                                 double sum = 0;
 
-                                // Разделяем на подстроки.
+                                // Разделяем на подстроки. 
                                 strNumbers = s.Split(new char[] { ' ' });
 
                                 // Суммируем подстроки, преобразованные в double.
@@ -115,9 +117,9 @@ namespace ConsoleApp2
                             }
                             catch
                             {
-                                await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Неверный ввод");
+                                await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Неверный ввод"); // а если здесь что-то пойдёт не так - всё, прощай бот?
                             }
-                            
+
                         }
                         else
 
@@ -150,7 +152,7 @@ namespace ConsoleApp2
                             {
                                 await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Неверный ввод");
                             }
-                            
+
                         }
                         else
 
@@ -183,9 +185,9 @@ namespace ConsoleApp2
                             {
                                 await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Неверный ввод");
                             }
-                            
+
                         }
-                        else
+                        else //ну лично я против такого стиля написания else if, и не я один
                         if (sec.CallbackQuery.Data == "/") // при нажатии на кнопку деления
                         {
                             try
@@ -197,11 +199,11 @@ namespace ConsoleApp2
                                 double div;
 
                                 // Разделяем на подстроки.
-                                strNumbers = s.Split(new char[] { ' ' });
+                                strNumbers = s.Split(new char[] { ' ' }); //почему не ' ' ?
 
-                                div = Double.Parse(strNumbers[0], CultureInfo.InvariantCulture);
-                                
-                                // Разделяем поочерёдно подстроки, преобразованные в double.
+                                div = Double.Parse(strNumbers[0], CultureInfo.InvariantCulture);//про культуры в курсе - это хорошо
+
+                                // Разделяем поочерёдно подстроки, преобразованные в double. //а есть и неплохой такой цикл foreach
                                 for (int i = 1; i < strNumbers.Length; i++)
                                 {
                                     div /= Double.Parse(strNumbers[i], CultureInfo.InvariantCulture);
@@ -216,18 +218,16 @@ namespace ConsoleApp2
                             {
                                 await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Неверный ввод");
                             }
-                            
-                        }
+
+                        } //Antipattern.Сopypaste.End()
                     };
                 }
                 else
                 if (ev.CallbackQuery.Data == "history")
                 {
-                    await Bot.SendTextMessageAsync(e.Message.Chat.Id, history);
+                    await Bot.SendTextMessageAsync(e.Message.Chat.Id, history); //и он отправит что? строка создана-то локально
                 }
             };
         }
     }
 }
-    
-
